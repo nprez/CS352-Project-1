@@ -64,7 +64,7 @@ class socket:
         self.socket.connect(address)
         sock352PktHdrData = '!BBBBHHLLQQLL'
         udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
-        header = udpPkt_header_data.pack(1, 1, 0, 0, checksum, 0, 0, self.seq, 0, 0, 0)
+        header = udpPkt_header_data.pack(1, 1, 0, 0, 320, 0, 0, 0, self.seq, 0, 0, 0)
         self.socket.sendAll(header)
         ret = self.socket.recv(320)
         #check for validity, implement timeout
