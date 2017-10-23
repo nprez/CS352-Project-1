@@ -11,13 +11,32 @@ import sys
 sendPort = None
 rcvPort = None
 
+##8 version; /* version number */                               0x1
+##8 flags; /* for connection set up, tear-down, control */      see below
+#8 opt_ptr; /* option type between the header and payload */    0
+#8 protocol; /* higher-level protocol */                        0
+##16 header_len; /* length of the header */                     320
+#16 checksum; /* checksum of the packet */                      calculate this
+#32 source_port; /* source port */                              0
+#32 dest_port; /* destination port */                           0
+##64 sequence_no; /* sequence number */                         start random, ++
+##64 ack_no; /* acknowledgement number */                       start x+1, ++
+#32 window; /* receiver advertised window in bytes*/            0
+##32 payload_len; /* length of the payload */                   up to 64K
+
+#SOCK352_SYN 0x01 Connection initiation
+#SOCK352_FIN 0x02 Connection end
+#SOCK352_ACK 0x04 Acknowledgement #
+#SOCK352_RESET 0x08 Reset the connection
+#SOCK352_HAS_OPT 0xA0 Option field is valid
+
 def init(UDPportTx,UDPportRx):   # initialize your UDP socket here
-    if(UDPportTx == None or UDPportTx == 0):
+    if(UDPportTx is None or UDPportTx == 0):
         sendPort = 27182
     else:
         sendPort = UDPportTx
 
-    if(UDPportRx == None or UDPportRx == 0):
+    if(UDPportRx is None or UDPportRx == 0):
         rcvPort = 27182
     else:
         rcvPort = UDPportRx
