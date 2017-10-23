@@ -49,14 +49,25 @@ class socket:
         return {
             "sPort": sendPort,
             "rPort": rcvPort,
-            "addr": None
+            "addr": None,
+            "seq": 0,
+            "ack": 0,
+            "socket": syssock.socket(AF_INET, SOCK_STREAM, 0)
         }
 
     def bind(self,address):
         return
 
     def connect(self,address):  # fill in your code here
-        self.addr = address;
+        self.addr = address
+        self.seq = random.randInt(0, 1000)
+        self.socket.connect(address)
+        sock352PktHdrData = '!BBBBHHLLQQLL'
+        udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
+        header = udpPkt_header_data.pack(1, 1, 0, 0, checksum, 0, 0, self.seq, 0, 0, 0)
+        self.socket.sendAll(header)
+        ret = self.socket.recv(320)
+        #check for validity, implement timeout
         return
     
     def listen(self,backlog):
