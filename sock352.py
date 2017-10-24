@@ -1,8 +1,11 @@
 
 import binascii
 import socket as syssock
+from socket import AF_INET, SOCK_STREAM
 import struct
 import sys
+
+import random
 
 # these functions are global to the class and
 # define the UDP ports all messages are sent
@@ -46,28 +49,52 @@ def init(UDPportTx,UDPportRx):   # initialize your UDP socket here
 class socket:
 
     def __init__(self):  # fill in your code here
-        return {
-            "sPort": sendPort,
-            "rPort": rcvPort,
-            "addr": None,
-            "seq": 0,
-            "ack": 0,
-            "socket": syssock.socket(AF_INET, SOCK_STREAM, 0)
-        }
+        self.sPort = sendPort,
+        self.rPort = rcvPort,
+        self.addr = None,
+        self.seq = 0,
+        self.ack = 0,
+        self.socket = syssock.socket(AF_INET, SOCK_STREAM, 0)
+        return
 
     def bind(self,address):
         return
 
     def connect(self,address):  # fill in your code here
         self.addr = address
-        self.seq = random.randInt(0, 1000)
+        self.seq = random.randint(0, 1000)
         self.socket.connect(address)
+        self.socket.settimeout(0.2)
         sock352PktHdrData = '!BBBBHHLLQQLL'
         udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
-        header = udpPkt_header_data.pack(1, 1, 0, 0, 320, 0, 0, 0, self.seq, 0, 0, 0)
-        self.socket.sendAll(header)
-        ret = self.socket.recv(320)
-        #check for validity, implement timeout
+        header = udpPkt_header_data.pack(1, 1, 0, 0, 320, 0, 0, 0, self.seq, self.ack, 0, 0)
+        #first part
+        self.socket.send(header)
+        self.seq+=1
+        waiting = True
+        while(waiting):
+            try:
+                #second part
+                ret = self.socket.recv(320)
+                retStruct = struct.unpack('!BBBBHHLLQQLL', ret)
+                synCheck = retStruct[1]
+                incSeqNum = retStruct[8]
+                incAckNum = retStruct[9]
+                #invalid
+                if(synCheck != 1 or incAckNum != self.seq or (incSeqNum != self.ack and self.ack != 0)):
+                    continue
+                self.ack = incSeqNum+1
+            except timeout:
+                #first part failed
+                self.socket.settimeout(0.2)
+                self.socket.send(header)
+                continue
+            waiting = False
+        #third part
+        self.socket.settimeout(0.2)
+        udpPkt_header_data2 = struct.Struct(sock352PktHdrData)
+        header2 = udpPkt_header_data2.pack(1, 1, 0, 0, 320, 0, 0, self.seq, self.ack, 0, 0)
+        self.socket.sendAll(header2)
         return
     
     def listen(self,backlog):
