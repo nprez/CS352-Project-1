@@ -58,6 +58,7 @@ class socket:
         return
 
     def bind(self,address):
+        self.socket.bind(address)
         return
 
     def connect(self,address):  # fill in your code here
@@ -98,6 +99,7 @@ class socket:
         return
     
     def listen(self,backlog):
+        self.socket.listen(backlog)
         return
 
     def accept(self):
