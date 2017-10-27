@@ -33,7 +33,13 @@ rcvPort = None
 #SOCK352_RESET 0x08 Reset the connection
 #SOCK352_HAS_OPT 0xA0 Option field is valid
 
-def init(UDPportTx,UDPportRx):   # initialize your UDP socket here
+# this init function is global to the class and
+# defines the UDP ports all messages are sent
+# and received from.
+def init(UDPportTx,UDPportRx): # initialize your UDP socket here
+    # create a UDP/datagram socket 
+    # bind the port to the Rx (receive) port number
+
     if(UDPportTx is None or UDPportTx == 0):
         sendPort = 27182
     else:
@@ -49,6 +55,7 @@ def init(UDPportTx,UDPportRx):   # initialize your UDP socket here
 class socket:
 
     def __init__(self):  # fill in your code here
+        # create any lists/arrays/hashes you need
         self.sPort = sendPort,
         self.rPort = rcvPort,
         self.addr = None,
@@ -58,10 +65,19 @@ class socket:
         return
 
     def bind(self,address):
-        self.socket.bind(address)
+        # null function for part 1
         return
 
-    def connect(self,address):  # fill in your code here
+    def connect(self,address): # fill in your code here
+        #  create a new sequence number 
+        #  create a new packet header with the SYN bit set in the flags (use the Struct.pack method)
+        #  also set the other fields (e.g sequence #)
+        #   add the packet to the send buffer
+        #   set the timeout
+        #      wait for the return SYN
+        #        if there was a timeout, retransmit the SYN packet
+        #   set the send and recv packets sequence numbers
+
         self.addr = address
         self.seq = random.randint(0, 1000)
         self.socket.connect(address)
@@ -99,21 +115,53 @@ class socket:
         return
     
     def listen(self,backlog):
-        self.socket.listen(backlog)
         return
 
     def accept(self):
         (clientsocket, address) = (1,1)  # change this to your code
+        # call  __sock352_get_packet() until we get a new conection
+        # check the the incoming packet - did we see a new SYN packet?
         return (clientsocket,address)
     
     def close(self):   # fill in your code here
+        # send a FIN packet (flags with FIN bit set)
         return
 
     def send(self,buffer):
         bytessent = 0     # fill in your code here
+        # make sure the correct fields are set in the flags
+        # make sure the sequence and acknowlegement numbers are correct
+        # create a new sock352 header using the struct.pack
+        # create a new UDP packet with the header and buffer 
+        # send the UDP packet to the destination and transmit port
+        # set the timeout
+        # wait or check for the ACK or a timeout
 
-        return bytessent 
+        return bytessent
 
     def recv(self,nbytes):
         bytesreceived = 0     # fill in your code here
-        return bytesreceived 
+        # call __sock352_get_packet() to get packets (polling)
+        # check the list of received fragements
+        # copy up to bytes_to_receive into a buffer
+        # return the buffer if there is some data
+        return bytesreceived
+
+        # this is an internal function that demultiplexes all incomming packets
+    # it update lists and data structures used by other methods
+    
+    def __sock352_get_packet(self):
+    # There is a differenct action for each packet type, based on the flags:
+    #  First check if it's a connection set up (SYN bit set in flags)
+    #    Create a new fragment list
+    #    Send a SYN packet back with the correct sequence number
+    #    Wake up any readers wating for a connection via accept() or return 
+    #  else
+    #      if it is a connection tear down (FIN) 
+    #        send a FIN packet, remove fragment list
+    #      else if it is a data packet
+    #           check the sequence numbers, add to the list of received fragments
+    #           send an ACK packet back with the correct sequence number
+    #          else if it's nothing it's a malformed packet.
+    #              send a reset (RST) packet with the sequence number
+        pass
