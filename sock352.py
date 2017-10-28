@@ -18,7 +18,7 @@ rcvPort = None
 ##8 flags; /* for connection set up, tear-down, control */      see below
 #8 opt_ptr; /* option type between the header and payload */    0
 #8 protocol; /* higher-level protocol */                        0
-##16 header_len; /* length of the header */                     320
+##16 header_len; /* length of the header */                     40
 #16 checksum; /* checksum of the packet */                      calculate this
 #32 source_port; /* source port */                              0
 #32 dest_port; /* destination port */                           0
@@ -31,7 +31,7 @@ rcvPort = None
 #SOCK352_FIN 0x02 Connection end
 #SOCK352_ACK 0x04 Acknowledgement #
 #SOCK352_RESET 0x08 Reset the connection
-#SOCK352_HAS_OPT 0xA0 Option field is valid
+#SOCK352_HAS_OPT 0x10 Option field is valid
 
 # this init function is global to the class and
 # defines the UDP ports all messages are sent
@@ -85,9 +85,9 @@ class socket:
         self.seq = random.randint(0, 1000)
         self.socket.connect(address)
         self.socket.settimeout(0.2)
-        sock352PktHdrData = '!BBBBHHLLQQLL'
+        self.sock352PktHdrData = '!BBBBHHLLQQLL'
         udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
-        header = udpPkt_header_data.pack(1, 1, 0, 0, 320, 0, 0, 0, self.seq, self.ack, 0, 0)
+        header = udpPkt_header_data.pack(1, 1, 0, 0, 40, 0, 0, 0, self.seq, self.ack, 0, 0)
         #first part
         self.socket.send(header)
         self.seq+=1
@@ -95,7 +95,7 @@ class socket:
         while(waiting):
             try:
                 #second part
-                ret = self.socket.recv(320)
+                ret = self.socket.recv(40)
                 retStruct = struct.unpack('!BBBBHHLLQQLL', ret)
                 synCheck = retStruct[1]
                 incSeqNum = retStruct[8]
@@ -113,7 +113,7 @@ class socket:
         #third part
         self.socket.settimeout(0.2)
         udpPkt_header_data2 = struct.Struct(sock352PktHdrData)
-        header2 = udpPkt_header_data2.pack(1, 1, 0, 0, 320, 0, 0, self.seq, self.ack, 0, 0)
+        header2 = udpPkt_header_data2.pack(1, 1, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
         self.socket.sendAll(header2)
         return
     
@@ -147,7 +147,8 @@ class socket:
 
     def recv(self,nbytes):
         bytesreceived = 0     # fill in your code here
-        packetList[PLindex] = self.socket.recv(nbytes+320)
+        packetList[PLindex] = self.socket.recv(nbytes+40)
+
         # call __sock352_get_packet() to get packets (polling)
         # check the list of received fragements
         # copy up to bytes_to_receive into a buffer
@@ -171,8 +172,17 @@ class socket:
     #           send an ACK packet back with the correct sequence number
     #          else if it's nothing it's a malformed packet.
     #              send a reset (RST) packet with the sequence number
-        
-        if (packetList[PLindex].flags.SYN == 1)
+        headerData = struct.unpack(sock352PktHdrData, packetList[PLindex])
+        if (headerData[1] == 1):            #syn
+            udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
+            syn = udpPkt_header_data.pack(1, 1, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
+            self.socket.sendAll(syn)
+        else if (headerData[1] == 2):       #fin
+            udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
+            fin = udpPkt_header_data.pack(1, 2, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
+            self.socket.sendAll(fin)
+        else if ()
+
 
 
         return
