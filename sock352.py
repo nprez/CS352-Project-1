@@ -63,8 +63,8 @@ class socket:
         self.ack = 0,
         self.socket = syssock.socket(AF_INET, SOCK_STREAM, 0)
 
-        packetList = []
-        PLindex = 0
+        self.packetList = []
+        self.PLindex = 0
         return
 
     def bind(self,address):
