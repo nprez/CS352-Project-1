@@ -56,13 +56,15 @@ class socket:
 
     def __init__(self):  # fill in your code here
         # create any lists/arrays/hashes you need
-        self.sPort = sendPort
-        self.rPort = rcvPort
-        self.addr = None
-        self.seq = 0
-        self.ack = 0
+        self.sPort = sendPort,
+        self.rPort = rcvPort,
+        self.addr = None,
+        self.seq = 0,
+        self.ack = 0,
         self.socket = syssock.socket(AF_INET, SOCK_STREAM, 0)
-        self.clsocket = None
+
+        packetList = []
+        PLindex = 0
         return
 
     def bind(self,address):
@@ -70,6 +72,9 @@ class socket:
         return
 
     def connect(self,address): # fill in your code here
+        #  create a new sequence number 
+        #  create a new packet header with the SYN bit set in the flags (use the Struct.pack method)
+        #  also set the other fields (e.g sequence #)
         #   add the packet to the send buffer
         #   set the timeout
         #      wait for the return SYN
@@ -77,12 +82,9 @@ class socket:
         #   set the send and recv packets sequence numbers
 
         self.addr = address
-        #  create a new sequence number 
         self.seq = random.randint(0, 1000)
         self.socket.connect(address)
         self.socket.settimeout(0.2)
-        #  create a new packet header with the SYN bit set in the flags (use the Struct.pack method)
-        #  also set the other fields (e.g sequence #)
         sock352PktHdrData = '!BBBBHHLLQQLL'
         udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
         header = udpPkt_header_data.pack(1, 1, 0, 0, 320, 0, 0, 0, self.seq, self.ack, 0, 0)
@@ -145,27 +147,32 @@ class socket:
 
     def recv(self,nbytes):
         bytesreceived = 0     # fill in your code here
+        packetList[PLindex] = self.socket.recv(nbytes+320)
         # call __sock352_get_packet() to get packets (polling)
         # check the list of received fragements
         # copy up to bytes_to_receive into a buffer
         # return the buffer if there is some data
         return bytesreceived
 
-    # this is an internal function that demultiplexes all incomming packets
+        # this is an internal function that demultiplexes all incomming packets
     # it update lists and data structures used by other methods
     
     def __sock352_get_packet(self):
-        # There is a differenct action for each packet type, based on the flags:
-        #  First check if it's a connection set up (SYN bit set in flags)
-        #    Create a new fragment list
-        #    Send a SYN packet back with the correct sequence number
-        #    Wake up any readers wating for a connection via accept() or return 
-        #  else
-        #      if it is a connection tear down (FIN) 
-        #        send a FIN packet, remove fragment list
-        #      else if it is a data packet
-        #           check the sequence numbers, add to the list of received fragments
-        #           send an ACK packet back with the correct sequence number
-        #          else if it's nothing it's a malformed packet.
-        #              send a reset (RST) packet with the sequence number
-        pass
+    # There is a differenct action for each packet type, based on the flags:
+    #  First check if it's a connection set up (SYN bit set in flags)
+    #    Create a new fragment list
+    #    Send a SYN packet back with the correct sequence number
+    #    Wake up any readers wating for a connection via accept() or return 
+    #  else
+    #      if it is a connection tear down (FIN) 
+    #        send a FIN packet, remove fragment list
+    #      else if it is a data packet
+    #           check the sequence numbers, add to the list of received fragments
+    #           send an ACK packet back with the correct sequence number
+    #          else if it's nothing it's a malformed packet.
+    #              send a reset (RST) packet with the sequence number
+        
+        if (packetList[PLindex].flags.SYN == 1)
+
+
+        return
