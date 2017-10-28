@@ -90,7 +90,6 @@ class socket:
         header = udpPkt_header_data.pack(1, 1, 0, 0, 40, 0, 0, 0, self.seq, self.ack, 0, 0)
         #first part
         self.socket.send(header)
-        self.seq+=1
         waiting = True
         while(waiting):
             try:
@@ -101,7 +100,7 @@ class socket:
                 incSeqNum = retStruct[8]
                 incAckNum = retStruct[9]
                 #invalid
-                if(synCheck != 1 or incAckNum != self.seq or (incSeqNum != self.ack and self.ack != 0)):
+                if(synCheck != 1 or incAckNum != self.seq+1 or (incSeqNum != self.ack and self.ack != 0)):
                     continue
                 self.ack = incSeqNum+1
             except timeout:
@@ -111,10 +110,12 @@ class socket:
                 continue
             waiting = False
         #third part
+        self.seq+=1
         self.socket.settimeout(0.2)
         udpPkt_header_data2 = struct.Struct(sock352PktHdrData)
         header2 = udpPkt_header_data2.pack(1, 1, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
         self.socket.sendAll(header2)
+        self.seq+=1
         return
     
     def listen(self,backlog):
@@ -131,6 +132,35 @@ class socket:
     
     def close(self):   # fill in your code here
         # send a FIN packet (flags with FIN bit set)
+        self.socket.settimeout(0.2)
+        sock352PktHdrData = '!BBBBHHLLQQLL'
+        udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
+        header = udpPkt_header_data.pack(1, 2, 0, 0, 320, 0, 0, 0, self.seq, self.ack, 0, 0)
+        self.socket.send(header)
+
+        waiting = True
+        while(waiting):
+            try:
+                #second part
+                ret = self.socket.recv(320)
+                retStruct = struct.unpack('!BBBBHHLLQQLL', ret)
+                ackCheck = retStruct[1]
+                incSeqNum = retStruct[8]
+                incAckNum = retStruct[9]
+                #invalid
+                if(ackCheck != 4 or incAckNum != self.seq+1 or incSeqNum != self.ack):
+                    continue
+                self.ack = incSeqNum+1
+            except timeout:
+                #first part failed
+                self.socket.settimeout(0.2)
+                self.socket.send(header)
+                continue
+            waiting = False
+
+        self.seq+=1;
+
+        self.socket.close()
         return
 
     def send(self,buffer):
@@ -155,9 +185,8 @@ class socket:
         # return the buffer if there is some data
         return bytesreceived
 
-        # this is an internal function that demultiplexes all incomming packets
+    # this is an internal function that demultiplexes all incomming packets
     # it update lists and data structures used by other methods
-    
     def __sock352_get_packet(self):
     # There is a differenct action for each packet type, based on the flags:
     #  First check if it's a connection set up (SYN bit set in flags)
@@ -182,7 +211,6 @@ class socket:
             fin = udpPkt_header_data.pack(1, 2, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
             self.socket.sendAll(fin)
         else if ()
-
 
 
         return
