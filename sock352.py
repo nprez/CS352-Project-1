@@ -188,19 +188,20 @@ class socket:
     # this is an internal function that demultiplexes all incomming packets
     # it update lists and data structures used by other methods
     def __sock352_get_packet(self):
-    # There is a differenct action for each packet type, based on the flags:
-    #  First check if it's a connection set up (SYN bit set in flags)
-    #    Create a new fragment list
-    #    Send a SYN packet back with the correct sequence number
-    #    Wake up any readers wating for a connection via accept() or return 
-    #  else
-    #      if it is a connection tear down (FIN) 
-    #        send a FIN packet, remove fragment list
-    #      else if it is a data packet
-    #           check the sequence numbers, add to the list of received fragments
-    #           send an ACK packet back with the correct sequence number
-    #          else if it's nothing it's a malformed packet.
-    #              send a reset (RST) packet with the sequence number
+        # There is a differenct action for each packet type, based on the flags:
+        #  First check if it's a connection set up (SYN bit set in flags)
+        #    Create a new fragment list
+        #    Send a SYN packet back with the correct sequence number
+        #    Wake up any readers wating for a connection via accept() or return
+        #  else
+        #      if it is a connection tear down (FIN) 
+        #        send a FIN packet, remove fragment list
+        #      else if it is a data packet
+        #           check the sequence numbers, add to the list of received fragments
+        #           send an ACK packet back with the correct sequence number
+        #          else if it's nothing it's a malformed packet.
+        #              send a reset (RST) packet with the sequence number
+        
         headerData = struct.unpack(sock352PktHdrData, packetList[PLindex])
         if (headerData[1] == 1):            #syn
             udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
