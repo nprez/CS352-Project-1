@@ -128,7 +128,11 @@ class socket:
         self.clsocket = self.socket.accept()
         # call  __sock352_get_packet() until we get a new conection
         # check the the incoming packet - did we see a new SYN packet?
+        self.settimeout(None)
+        packetList[0] = self.socket.recv(40)
         __sock352_get_packet()
+        packetList[0] = None
+        self.settimeout(0.2)
         return self.clsocket
     
     def close(self):   # fill in your code here
@@ -177,7 +181,7 @@ class socket:
         header = udpPkt_header_data.pack(1, 0, 0, 0, 40, 0, 0, 0, self.seq, self.ack, 0, len(buffer)+40)
         packet = header + buffer
 
-        self.socket.send(packet)
+        bytessent = self.socket.send(packet)
 
         waiting = True
         self.socket.settimeout(0.2)
@@ -196,7 +200,7 @@ class socket:
                 self.ack = incSeqNum+1
             except timeout:
                 #first part failed
-                self.send(packet)
+                bytessent = self.send(packet)
                 continue
             waiting = False
 
@@ -204,8 +208,11 @@ class socket:
         return bytessent
 
     def recv(self,nbytes):
-        bytesreceived = 0     # fill in your code here
-        packetList[PLindex] = self.socket.recv(nbytes+40)
+        # fill in your code here
+        packetList[0] = self.socket.recv(nbytes+40)
+        __sock352_get_packet()
+        bytesreceived = packetList[0][40:]
+        packetList[0] = None
 
         # call __sock352_get_packet() to get packets (polling)
         # check the list of received fragements
@@ -229,18 +236,50 @@ class socket:
         #           send an ACK packet back with the correct sequence number
         #          else if it's nothing it's a malformed packet.
         #              send a reset (RST) packet with the sequence number
-
-        headerData = struct.unpack(self.sock352PktHdrData, packetList[PLindex])
+        header = packetList[PLindex][:40]
+        msg = packetList[PLindex][40:]
+        headerData = struct.unpack(self.sock352PktHdrData, header)
         if (headerData[1] == 1):            #syn
             udpPkt_hdr_data = struct.Struct(self.sock352PktHdrData)
+            self.seq = self.seq = random.randint(0, 1000)
+            self.ack = headerData[8]+1
             syn = udpPkt_header_data.pack(1, 5, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
             self.socket.sendAll(syn)
+            self.socket.settimeout(0.2)
+
+            waiting = True
+            while(waiting):
+                try:
+                    #wait for third part
+                    ret = self.socket.recv(40)
+                    retStruct = struct.unpack(self.sock352PktHdrData, ret)
+                    ackCheck = retStruct[1]
+                    incSeqNum = retStruct[8]
+                    incAckNum = retStruct[9]
+                    #invalid
+                    if(ackCheck != 5 or incAckNum != self.seq+1 or incSeqNum != self.ack):
+                        continue
+                    self.ack+=1;
+                except timeout:
+                    #our ack failed; resend
+                    self.socket.settimeout(0.2)
+                    self.socket.sendAll(syn)
+                    continue
+                waiting = False
+
+            self.seq+=1
+
         else if (headerData[1] == 2):       #fin
             udpPkt_hdr_data = struct.Struct(self.sock352PktHdrData)
             fin = udpPkt_header_data.pack(1, 6, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
             self.socket.sendAll(fin)
+
         else if (headerData[1] == 0):
-            return
+            udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
+            ack = udpPkt_header_data.pack(1, 4, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
+            self.socket.sendAll(ack)
+            self.seq+=1
+            self.ack+=1
 
         else:       #malformed packet
             udpPkt_hdr_data = struct.Struct(self.sock352PktHdrData)
