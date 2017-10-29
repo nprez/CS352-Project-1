@@ -100,7 +100,7 @@ class socket:
                 incSeqNum = retStruct[8]
                 incAckNum = retStruct[9]
                 #invalid
-                if(synCheck != 1 or incAckNum != self.seq+1 or (incSeqNum != self.ack and self.ack != 0)):
+                if(synCheck != 5 or incAckNum != self.seq+1 or (incSeqNum != self.ack and self.ack != 0)):
                     continue
                 self.ack = incSeqNum+1
             except timeout:
@@ -113,7 +113,7 @@ class socket:
         self.seq+=1
         self.socket.settimeout(0.2)
         udpPkt_header_data2 = struct.Struct(sock352PktHdrData)
-        header2 = udpPkt_header_data2.pack(1, 1, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
+        header2 = udpPkt_header_data2.pack(1, 5, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
         self.socket.sendAll(header2)
         self.seq+=1
         return
@@ -148,7 +148,7 @@ class socket:
                 incSeqNum = retStruct[8]
                 incAckNum = retStruct[9]
                 #invalid
-                if(ackCheck != 4 or incAckNum != self.seq+1 or incSeqNum != self.ack):
+                if(ackCheck != 6 or incAckNum != self.seq+1 or incSeqNum != self.ack):
                     continue
                 self.ack = incSeqNum+1
             except timeout:
@@ -204,11 +204,11 @@ class socket:
         headerData = struct.unpack(sock352PktHdrData, packetList[PLindex])
         if (headerData[1] == 1):            #syn
             udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
-            syn = udpPkt_header_data.pack(1, 1, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
+            syn = udpPkt_header_data.pack(1, 5, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
             self.socket.sendAll(syn)
         else if (headerData[1] == 2):       #fin
             udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
-            fin = udpPkt_header_data.pack(1, 2, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
+            fin = udpPkt_header_data.pack(1, 6, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
             self.socket.sendAll(fin)
         else if ()
 
