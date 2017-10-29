@@ -63,7 +63,8 @@ class socket:
         self.ack = 0,
         self.socket = syssock.socket(AF_INET, SOCK_STREAM, 0)
 
-        self.packetList = []
+        self.packetList = []    # for part 1 we dont need a buffer to be stored,
+        # so we're only using this list to store the current packet
         self.PLindex = 0
         return
 
@@ -86,7 +87,7 @@ class socket:
         self.socket.connect(address)
         self.socket.settimeout(0.2)
         self.sock352PktHdrData = '!BBBBHHLLQQLL'
-        udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
+        udpPkt_hdr_data = struct.Struct(self.sock352PktHdrData)
         header = udpPkt_header_data.pack(1, 1, 0, 0, 40, 0, 0, 0, self.seq, self.ack, 0, 0)
         #first part
         self.socket.sendAll(header)
@@ -112,7 +113,7 @@ class socket:
         #third part
         self.seq+=1
         self.socket.settimeout(0.2)
-        udpPkt_header_data2 = struct.Struct(sock352PktHdrData)
+        udpPkt_header_data2 = struct.Struct(self.sock352PktHdrData)
         header2 = udpPkt_header_data2.pack(1, 5, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
         self.socket.sendAll(header2)
         self.seq+=1
@@ -133,8 +134,7 @@ class socket:
     def close(self):   # fill in your code here
         # send a FIN packet (flags with FIN bit set)
         self.socket.settimeout(0.2)
-        sock352PktHdrData = '!BBBBHHLLQQLL'
-        udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
+        udpPkt_hdr_data = struct.Struct(self.sock352PktHdrData)
         header = udpPkt_header_data.pack(1, 2, 0, 0, 40, 0, 0, 0, self.seq, self.ack, 0, 0)
         self.socket.sendAll(header)
 
@@ -143,7 +143,7 @@ class socket:
             try:
                 #second part
                 ret = self.socket.recv(40)
-                retStruct = struct.unpack('!BBBBHHLLQQLL', ret)
+                retStruct = struct.unpack(self.sock352PktHdrData, ret)
                 ackCheck = retStruct[1]
                 incSeqNum = retStruct[8]
                 incAckNum = retStruct[9]
@@ -172,6 +172,34 @@ class socket:
         # send the UDP packet to the destination and transmit port
         # set the timeout
         # wait or check for the ACK or a timeout
+
+        udpPkt_hdr_data = struct.Struct(self.sock352PktHdrData)
+        header = udpPkt_header_data.pack(1, 0, 0, 0, 40, 0, 0, 0, self.seq, self.ack, 0, len(buffer)+40)
+        packet = header + buffer
+
+        self.socket.send(packet)
+
+        waiting = True
+        self.socket.settimeout(0.2)
+        while(waiting):
+            try:
+                #second part
+
+                ret = self.socket.recv(40)
+                retStruct = struct.unpack(self.sock352PktHdrData, ret)
+                ackCheck = retStruct[1]
+                incSeqNum = retStruct[8]
+                incAckNum = retStruct[9]
+                #invalid
+                if(ackCheck != 4 or incAckNum != self.seq+1 or incSeqNum != self.ack):
+                    continue
+                self.ack = incSeqNum+1
+            except timeout:
+                #first part failed
+                self.send(packet)
+                continue
+            waiting = False
+
 
         return bytessent
 
@@ -202,20 +230,20 @@ class socket:
         #          else if it's nothing it's a malformed packet.
         #              send a reset (RST) packet with the sequence number
 
-        headerData = struct.unpack(sock352PktHdrData, packetList[PLindex])
+        headerData = struct.unpack(self.sock352PktHdrData, packetList[PLindex])
         if (headerData[1] == 1):            #syn
-            udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
+            udpPkt_hdr_data = struct.Struct(self.sock352PktHdrData)
             syn = udpPkt_header_data.pack(1, 5, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
             self.socket.sendAll(syn)
         else if (headerData[1] == 2):       #fin
-            udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
+            udpPkt_hdr_data = struct.Struct(self.sock352PktHdrData)
             fin = udpPkt_header_data.pack(1, 6, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
             self.socket.sendAll(fin)
         else if (headerData[1] == 0):
-            
+            return
 
         else:       #malformed packet
-            udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
+            udpPkt_hdr_data = struct.Struct(self.sock352PktHdrData)
             res = udpPkt_header_data.pack(1, 8, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
             self.socket.sendAll(res)
 
