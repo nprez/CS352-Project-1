@@ -210,7 +210,12 @@ class socket:
             udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
             fin = udpPkt_header_data.pack(1, 2, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
             self.socket.sendAll(fin)
-        else if ()
+        else if (headerData[1] == 0):
+            
 
+        else:       #malformed packet
+            udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
+            res = udpPkt_header_data.pack(1, 8, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
+            self.socket.sendAll(res)
 
         return
