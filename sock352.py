@@ -203,7 +203,7 @@ class socket:
                 bytessent = self.send(packet)
                 continue
             waiting = False
-
+        self.seq += 1
 
         return bytessent
 
