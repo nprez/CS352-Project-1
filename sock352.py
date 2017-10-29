@@ -89,7 +89,7 @@ class socket:
         udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
         header = udpPkt_header_data.pack(1, 1, 0, 0, 40, 0, 0, 0, self.seq, self.ack, 0, 0)
         #first part
-        self.socket.send(header)
+        self.socket.sendAll(header)
         waiting = True
         while(waiting):
             try:
@@ -106,7 +106,7 @@ class socket:
             except timeout:
                 #first part failed
                 self.socket.settimeout(0.2)
-                self.socket.send(header)
+                self.socket.sendAll(header)
                 continue
             waiting = False
         #third part
@@ -136,7 +136,7 @@ class socket:
         sock352PktHdrData = '!BBBBHHLLQQLL'
         udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
         header = udpPkt_header_data.pack(1, 2, 0, 0, 40, 0, 0, 0, self.seq, self.ack, 0, 0)
-        self.socket.send(header)
+        self.socket.sendAll(header)
 
         waiting = True
         while(waiting):
@@ -154,7 +154,7 @@ class socket:
             except timeout:
                 #first part failed
                 self.socket.settimeout(0.2)
-                self.socket.send(header)
+                self.socket.sendAll(header)
                 continue
             waiting = False
 
@@ -201,7 +201,7 @@ class socket:
         #           send an ACK packet back with the correct sequence number
         #          else if it's nothing it's a malformed packet.
         #              send a reset (RST) packet with the sequence number
-        
+
         headerData = struct.unpack(sock352PktHdrData, packetList[PLindex])
         if (headerData[1] == 1):            #syn
             udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
