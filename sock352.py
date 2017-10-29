@@ -89,7 +89,7 @@ class socket:
         udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
         header = udpPkt_header_data.pack(1, 1, 0, 0, 40, 0, 0, 0, self.seq, self.ack, 0, 0)
         #first part
-        self.socket.send(header)
+        self.socket.sendAll(header)
         waiting = True
         while(waiting):
             try:
@@ -100,20 +100,20 @@ class socket:
                 incSeqNum = retStruct[8]
                 incAckNum = retStruct[9]
                 #invalid
-                if(synCheck != 1 or incAckNum != self.seq+1 or (incSeqNum != self.ack and self.ack != 0)):
+                if(synCheck != 5 or incAckNum != self.seq+1 or (incSeqNum != self.ack and self.ack != 0)):
                     continue
                 self.ack = incSeqNum+1
             except timeout:
                 #first part failed
                 self.socket.settimeout(0.2)
-                self.socket.send(header)
+                self.socket.sendAll(header)
                 continue
             waiting = False
         #third part
         self.seq+=1
         self.socket.settimeout(0.2)
         udpPkt_header_data2 = struct.Struct(sock352PktHdrData)
-        header2 = udpPkt_header_data2.pack(1, 1, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
+        header2 = udpPkt_header_data2.pack(1, 5, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
         self.socket.sendAll(header2)
         self.seq+=1
         return
@@ -135,26 +135,26 @@ class socket:
         self.socket.settimeout(0.2)
         sock352PktHdrData = '!BBBBHHLLQQLL'
         udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
-        header = udpPkt_header_data.pack(1, 2, 0, 0, 320, 0, 0, 0, self.seq, self.ack, 0, 0)
-        self.socket.send(header)
+        header = udpPkt_header_data.pack(1, 2, 0, 0, 40, 0, 0, 0, self.seq, self.ack, 0, 0)
+        self.socket.sendAll(header)
 
         waiting = True
         while(waiting):
             try:
                 #second part
-                ret = self.socket.recv(320)
+                ret = self.socket.recv(40)
                 retStruct = struct.unpack('!BBBBHHLLQQLL', ret)
                 ackCheck = retStruct[1]
                 incSeqNum = retStruct[8]
                 incAckNum = retStruct[9]
                 #invalid
-                if(ackCheck != 4 or incAckNum != self.seq+1 or incSeqNum != self.ack):
+                if(ackCheck != 6 or incAckNum != self.seq+1 or incSeqNum != self.ack):
                     continue
                 self.ack = incSeqNum+1
             except timeout:
                 #first part failed
                 self.socket.settimeout(0.2)
-                self.socket.send(header)
+                self.socket.sendAll(header)
                 continue
             waiting = False
 
@@ -188,27 +188,28 @@ class socket:
     # this is an internal function that demultiplexes all incomming packets
     # it update lists and data structures used by other methods
     def __sock352_get_packet(self):
-    # There is a differenct action for each packet type, based on the flags:
-    #  First check if it's a connection set up (SYN bit set in flags)
-    #    Create a new fragment list
-    #    Send a SYN packet back with the correct sequence number
-    #    Wake up any readers wating for a connection via accept() or return 
-    #  else
-    #      if it is a connection tear down (FIN) 
-    #        send a FIN packet, remove fragment list
-    #      else if it is a data packet
-    #           check the sequence numbers, add to the list of received fragments
-    #           send an ACK packet back with the correct sequence number
-    #          else if it's nothing it's a malformed packet.
-    #              send a reset (RST) packet with the sequence number
+        # There is a differenct action for each packet type, based on the flags:
+        #  First check if it's a connection set up (SYN bit set in flags)
+        #    Create a new fragment list
+        #    Send a SYN packet back with the correct sequence number
+        #    Wake up any readers wating for a connection via accept() or return
+        #  else
+        #      if it is a connection tear down (FIN) 
+        #        send a FIN packet, remove fragment list
+        #      else if it is a data packet
+        #           check the sequence numbers, add to the list of received fragments
+        #           send an ACK packet back with the correct sequence number
+        #          else if it's nothing it's a malformed packet.
+        #              send a reset (RST) packet with the sequence number
+
         headerData = struct.unpack(sock352PktHdrData, packetList[PLindex])
         if (headerData[1] == 1):            #syn
             udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
-            syn = udpPkt_header_data.pack(1, 1, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
+            syn = udpPkt_header_data.pack(1, 5, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
             self.socket.sendAll(syn)
         else if (headerData[1] == 2):       #fin
             udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
-            fin = udpPkt_header_data.pack(1, 2, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
+            fin = udpPkt_header_data.pack(1, 6, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
             self.socket.sendAll(fin)
         else if (headerData[1] == 0):
             
