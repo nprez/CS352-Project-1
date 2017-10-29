@@ -135,14 +135,14 @@ class socket:
         self.socket.settimeout(0.2)
         sock352PktHdrData = '!BBBBHHLLQQLL'
         udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
-        header = udpPkt_header_data.pack(1, 2, 0, 0, 320, 0, 0, 0, self.seq, self.ack, 0, 0)
+        header = udpPkt_header_data.pack(1, 2, 0, 0, 40, 0, 0, 0, self.seq, self.ack, 0, 0)
         self.socket.send(header)
 
         waiting = True
         while(waiting):
             try:
                 #second part
-                ret = self.socket.recv(320)
+                ret = self.socket.recv(40)
                 retStruct = struct.unpack('!BBBBHHLLQQLL', ret)
                 ackCheck = retStruct[1]
                 incSeqNum = retStruct[8]
