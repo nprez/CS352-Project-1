@@ -6,6 +6,7 @@ import struct
 import sys
 import pdb
 
+
 import random
 
 # these functions are global to the class and
@@ -57,11 +58,11 @@ class socket:
 
     def __init__(self):  # fill in your code here
         # create any lists/arrays/hashes you need
-        self.sPort = sendPort,
-        self.rPort = rcvPort,
-        self.addr = None,
-        self.seq = 0,
-        self.ack = 0,
+        self.sPort = sendPort
+        self.rPort = rcvPort
+        self.addr = None
+        self.seq = 0
+        self.ack = 0
         self.socket = syssock.socket(AF_INET, SOCK_STREAM, 0)
 
         self.packetList = []    # for part 1 we dont need a buffer to be stored,
@@ -84,15 +85,17 @@ class socket:
         #   set the send and recv packets sequence numbers
 
         self.addr = address
+        self.addr = (syssock.gethostbyname(syssock.getfqdn(self.addr[0])), (int)(self.addr[1]))
         self.seq = random.randint(0, 1000)
-        pdb.set_trace()
-        self.socket.connect((address[0], int(address[1])))
-        self.socket.settimeout(0.2)
+        #pdb.set_trace()
+        #self.socket.connect((syssock.gethostbyname(syssock.getfqdn(address[0])), int(address[1])))
+        #self.socket.settimeout(0.2)
         self.sock352PktHdrData = '!BBBBHHLLQQLL'
         udpPkt_hdr_data = struct.Struct(self.sock352PktHdrData)
-        header = udpPkt_header_data.pack(1, 1, 0, 0, 40, 0, 0, 0, self.seq, self.ack, 0, 0)
+        header = udpPkt_hdr_data.pack(1, 1, 0, 0, 40, 0, 0, 0, self.seq, self.ack, 0, 0)
         #first part
-        self.socket.sendAll(header)
+        self.socket.sendto(header, self.addr)
+
         waiting = True
         while(waiting):
             try:
@@ -109,7 +112,7 @@ class socket:
             except timeout:
                 #first part failed
                 self.socket.settimeout(0.2)
-                self.socket.sendAll(header)
+                self.socket.sendto(header, self.addr)
                 continue
             waiting = False
         #third part
@@ -117,7 +120,7 @@ class socket:
         self.socket.settimeout(0.2)
         udpPkt_header_data2 = struct.Struct(self.sock352PktHdrData)
         header2 = udpPkt_header_data2.pack(1, 5, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
-        self.socket.sendAll(header2)
+        self.socket.sendto(header2, self.addr)
         self.seq+=1
         return
     
@@ -142,7 +145,7 @@ class socket:
         self.socket.settimeout(0.2)
         udpPkt_hdr_data = struct.Struct(self.sock352PktHdrData)
         header = udpPkt_header_data.pack(1, 2, 0, 0, 40, 0, 0, 0, self.seq, self.ack, 0, 0)
-        self.socket.sendAll(header)
+        self.socket.sendto(header, self.addr)
 
         waiting = True
         while(waiting):
@@ -160,7 +163,7 @@ class socket:
             except timeout:
                 #first part failed
                 self.socket.settimeout(0.2)
-                self.socket.sendAll(header)
+                self.socket.sendto(header, self.addr)
                 continue
             waiting = False
 
@@ -183,7 +186,7 @@ class socket:
         header = udpPkt_header_data.pack(1, 0, 0, 0, 40, 0, 0, 0, self.seq, self.ack, 0, len(buffer)+40)
         packet = header + buffer
 
-        bytessent = self.socket.send(packet)
+        bytessent = self.socket.sendto(packet, self.addr)
 
         waiting = True
         self.socket.settimeout(0.2)
@@ -202,7 +205,7 @@ class socket:
                 self.ack = incSeqNum+1
             except timeout:
                 #first part failed
-                bytessent = self.send(packet)
+                bytessent = self.sendto(packet, self.addr)
                 continue
             waiting = False
         self.seq += 1
@@ -246,7 +249,7 @@ class socket:
             self.seq = self.seq = random.randint(0, 1000)
             self.ack = headerData[8]+1
             syn = udpPkt_header_data.pack(1, 5, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
-            self.socket.sendAll(syn)
+            self.socket.sendto(syn, self.addr)
             self.socket.settimeout(0.2)
 
             waiting = True
@@ -265,7 +268,7 @@ class socket:
                 except timeout:
                     #our ack failed; resend
                     self.socket.settimeout(0.2)
-                    self.socket.sendAll(syn)
+                    self.socket.sendto(syn, self.addr)
                     continue
                 waiting = False
 
@@ -274,18 +277,18 @@ class socket:
         elif (headerData[1] == 2):       #fin
             udpPkt_hdr_data = struct.Struct(self.sock352PktHdrData)
             fin = udpPkt_header_data.pack(1, 6, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
-            self.socket.sendAll(fin)
+            self.socket.sendto(fin, self.addr)
 
         elif (headerData[1] == 0):
             udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
             ack = udpPkt_header_data.pack(1, 4, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
-            self.socket.sendAll(ack)
+            self.socket.sendto(ack, self.addr)
             self.seq+=1
             self.ack+=1
 
         else:       #malformed packet
             udpPkt_hdr_data = struct.Struct(self.sock352PktHdrData)
             res = udpPkt_header_data.pack(1, 8, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
-            self.socket.sendAll(res)
+            self.socket.sendto(res, self.addr)
 
         return
