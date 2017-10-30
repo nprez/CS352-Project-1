@@ -87,13 +87,14 @@ class socket:
         self.addr = address
         self.addr = (syssock.gethostbyname(syssock.getfqdn(self.addr[0])), (int)(self.addr[1]))
         self.seq = random.randint(0, 1000)
-        #pdb.set_trace()
+        
         #self.socket.connect((syssock.gethostbyname(syssock.getfqdn(address[0])), int(address[1])))
         #self.socket.settimeout(0.2)
         self.sock352PktHdrData = '!BBBBHHLLQQLL'
         udpPkt_hdr_data = struct.Struct(self.sock352PktHdrData)
         header = udpPkt_hdr_data.pack(1, 1, 0, 0, 40, 0, 0, 0, self.seq, self.ack, 0, 0)
         #first part
+        pdb.set_trace()
         self.socket.sendto(header, self.addr)
 
         waiting = True
@@ -183,7 +184,7 @@ class socket:
         # wait or check for the ACK or a timeout
 
         udpPkt_hdr_data = struct.Struct(self.sock352PktHdrData)
-        header = udpPkt_header_data.pack(1, 0, 0, 0, 40, 0, 0, 0, self.seq, self.ack, 0, len(buffer)+40)
+        header = udpPkt_header_data.pack(1, 0, 0, 0, 40, 0, 0, 0, self.seq, self.ack, 0, len(buffer))
         packet = header + buffer
 
         bytessent = self.socket.sendto(packet, self.addr)
