@@ -1,7 +1,7 @@
 
 import binascii
 import socket as syssock
-from socket import AF_INET, SOCK_STREAM
+from socket import AF_INET, SOCK_STREAM, SOCK_DGRAM
 import struct
 import sys
 import pdb
@@ -45,12 +45,12 @@ def init(UDPportTx,UDPportRx): # initialize your UDP socket here
     if(UDPportTx is None or UDPportTx == 0):
         sendPort = 27182
     else:
-        sendPort = UDPportTx
+        sendPort = int(UDPportTx)
 
     if(UDPportRx is None or UDPportRx == 0):
         rcvPort = 27182
     else:
-        rcvPort = UDPportRx
+        rcvPort = int(UDPportRx)
 
     pass
     
@@ -63,7 +63,7 @@ class socket:
         self.addr = None
         self.seq = 0
         self.ack = 0
-        self.socket = syssock.socket(AF_INET, SOCK_STREAM, 0)
+        self.socket = syssock.socket(AF_INET, SOCK_DGRAM)
 
         self.packetList = []    # for part 1 we dont need a buffer to be stored,
         # so we're only using this list to store the current packet
@@ -129,9 +129,14 @@ class socket:
         return
 
     def accept(self):
-        self.socket.bind(('', int(rcvPort)))
-        self.socket.listen(5)
-        self.clsocket = self.socket.accept()
+        self.socket.bind(('', rcvPort))
+        #self.socket.listen(5)
+        #self.clsocket = self.socket.accept()
+
+        #rcv syn info from client
+        self.clsocket = socket()
+        #set the data correctly
+
         # call  __sock352_get_packet() until we get a new conection
         # check the the incoming packet - did we see a new SYN packet?
         self.settimeout(None)
