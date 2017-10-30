@@ -137,7 +137,6 @@ class socket:
         self.__sock352_get_packet()
         self.packetList[0] = None
         self.socket.settimeout(0.2)
-        #return (self.clsocket, self.clsocket.addr)
         return(self, self.addr)
     
     def close(self):   # fill in your code here
