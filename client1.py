@@ -35,7 +35,7 @@ def main():
     if (args['port']): 
         port = args['port']
     else:
-        port = 1111 
+        port = 1129
 
     # open the file for reading
     if (filename):
