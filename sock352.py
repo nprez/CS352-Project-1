@@ -41,6 +41,8 @@ rcvPort = 0
 def init(UDPportTx,UDPportRx): # initialize your UDP socket here
     # create a UDP/datagram socket 
     # bind the port to the Rx (receive) port number
+    global sendPort
+    global rcvPort
 
     if(UDPportTx is None or UDPportTx == 0):
         sendPort = 27182
@@ -51,8 +53,6 @@ def init(UDPportTx,UDPportRx): # initialize your UDP socket here
         rcvPort = 27182
     else:
         rcvPort = int(UDPportRx)
-
-    pass
     
 class socket:
 
@@ -84,9 +84,9 @@ class socket:
         #        if there was a timeout, retransmit the SYN packet
         #   set the send and recv packets sequence numbers
 
-        self.addr = address
-        self.addr = (syssock.gethostbyname(syssock.getfqdn(self.addr[0])), (int)(self.addr[1]))
+        self.addr = (syssock.gethostbyname(syssock.getfqdn(address[0])), (int)(self.rPort))
         self.seq = random.randint(0, 1000)
+        self.socket.bind(("", sendPort))
         
         #self.socket.connect((syssock.gethostbyname(syssock.getfqdn(address[0])), int(address[1])))
         #self.socket.settimeout(0.2)
@@ -94,14 +94,16 @@ class socket:
         udpPkt_hdr_data = struct.Struct(self.sock352PktHdrData)
         header = udpPkt_hdr_data.pack(1, 1, 0, 0, 40, 0, 0, 0, self.seq, self.ack, 0, 0)
         #first part
-        pdb.set_trace()
+        print (self.addr)
         self.socket.sendto(header, self.addr)
 
         waiting = True
         while(waiting):
             try:
                 #second part
-                ret = self.socket.recv(40)
+                #pdb.set_trace()
+                self.socket.settimeout(0.2)
+                ret, ad = self.socket.recvfrom(40)
                 retStruct = struct.unpack('!BBBBHHLLQQLL', ret)
                 synCheck = retStruct[1]
                 incSeqNum = retStruct[8]
@@ -110,9 +112,9 @@ class socket:
                 if(synCheck != 5 or incAckNum != self.seq+1 or (incSeqNum != self.ack and self.ack != 0)):
                     continue
                 self.ack = incSeqNum+1
-            except timeout:
+            except:
                 #first part failed
-                self.socket.settimeout(0.2)
+                print ("receive timed out")
                 self.socket.sendto(header, self.addr)
                 continue
             waiting = False
@@ -129,7 +131,9 @@ class socket:
         return
 
     def accept(self):
-        self.socket.bind(('', rcvPort))
+        #pdb.set_trace()
+
+        self.socket.bind(("", rcvPort))
         #self.socket.listen(5)
         #self.clsocket = self.socket.accept()
 
@@ -139,11 +143,13 @@ class socket:
 
         # call  __sock352_get_packet() until we get a new conection
         # check the the incoming packet - did we see a new SYN packet?
-        self.settimeout(None)
-        packetList[0] = self.socket.recv(40)
+        self.socket.settimeout(None)
+        packetList[0], ad = self.socket.recvfrom(40)
+        self.addr = (syssock.gethostbyname(syssock.getfqdn(ad[1])), (int)(self.sPort))
+        print ("got the packet")
         __sock352_get_packet()
         packetList[0] = None
-        self.settimeout(0.2)
+        self.socket.settimeout(0.2)
         return self.clsocket
     
     def close(self):   # fill in your code here
@@ -157,7 +163,7 @@ class socket:
         while(waiting):
             try:
                 #second part
-                ret = self.socket.recv(40)
+                ret, ad = self.socket.recvfrom(40)
                 retStruct = struct.unpack(self.sock352PktHdrData, ret)
                 ackCheck = retStruct[1]
                 incSeqNum = retStruct[8]
@@ -166,7 +172,7 @@ class socket:
                 if(ackCheck != 6 or incAckNum != self.seq+1 or incSeqNum != self.ack):
                     continue
                 self.ack = incSeqNum+1
-            except timeout:
+            except:
                 #first part failed
                 self.socket.settimeout(0.2)
                 self.socket.sendto(header, self.addr)
@@ -200,7 +206,7 @@ class socket:
             try:
                 #second part
 
-                ret = self.socket.recv(40)
+                ret, ad = self.socket.recvfrom(40)
                 retStruct = struct.unpack(self.sock352PktHdrData, ret)
                 ackCheck = retStruct[1]
                 incSeqNum = retStruct[8]
@@ -209,7 +215,7 @@ class socket:
                 if(ackCheck != 4 or incAckNum != self.seq+1 or incSeqNum != self.ack):
                     continue
                 self.ack = incSeqNum+1
-            except timeout:
+            except:
                 #first part failed
                 bytessent = self.sendto(packet, self.addr)
                 continue
@@ -220,7 +226,7 @@ class socket:
 
     def recv(self,nbytes):
         # fill in your code here
-        packetList[0] = self.socket.recv(nbytes+40)
+        packetList[0], ad = self.socket.recvfrom(nbytes+40)
         __sock352_get_packet()
         bytesreceived = packetList[0][40:]
         packetList[0] = None
@@ -262,7 +268,7 @@ class socket:
             while(waiting):
                 try:
                     #wait for third part
-                    ret = self.socket.recv(40)
+                    ret, ad = self.socket.recvfrom(40)
                     retStruct = struct.unpack(self.sock352PktHdrData, ret)
                     ackCheck = retStruct[1]
                     incSeqNum = retStruct[8]
@@ -271,7 +277,7 @@ class socket:
                     if(ackCheck != 5 or incAckNum != self.seq+1 or incSeqNum != self.ack):
                         continue
                     self.ack+=1;
-                except timeout:
+                except:
                     #our ack failed; resend
                     self.socket.settimeout(0.2)
                     self.socket.sendto(syn, self.addr)
