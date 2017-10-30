@@ -15,6 +15,8 @@ import random
 
 global sendPort
 global rcvPort
+sendPort = 0
+rcvPort = 0
 
 ##8 version; /* version number */                               0x1
 ##8 flags; /* for connection set up, tear-down, control */      see below
