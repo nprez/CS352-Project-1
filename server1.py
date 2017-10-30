@@ -36,7 +36,7 @@ def main():
     if (args['port']): 
         port = args['port']
     else:
-        port = 1111 
+        port = 1129
     
     if (filename):
         try: 
@@ -70,7 +70,8 @@ def main():
     s.listen(5)
 
     # when accept returns, the client is connected 
-    (s2,address) = s.accept() 
+    (s2,address) = s.accept()
+    print("this isnt printing right now")
 
     # this receives the size of the file
     # as a 4 byte integer in network byte order (big endian)
