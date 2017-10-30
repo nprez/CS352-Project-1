@@ -135,15 +135,17 @@ class socket:
         #self.socket.listen(5)
         #self.clsocket = self.socket.accept()
 
-        #rcv syn info from client
-        self.clsocket = socket()
-        #set the data correctly
-
         # call  __sock352_get_packet() until we get a new conection
         # check the the incoming packet - did we see a new SYN packet?
         self.socket.settimeout(None)
         packetList[0], ad = self.socket.recvfrom(40)
         self.addr = (syssock.gethostbyname(syssock.getfqdn(ad[0])), (int)(ad[1]))
+
+        #new client socket
+        self.clsocket = socket()
+        #set the data correctly
+        self.clsocket.addr = self.addr
+        
         print ("got the packet")
         __sock352_get_packet()
         packetList[0] = None
