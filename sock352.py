@@ -4,6 +4,7 @@ import socket as syssock
 from socket import AF_INET, SOCK_STREAM
 import struct
 import sys
+import pdb
 
 import random
 
@@ -11,8 +12,8 @@ import random
 # define the UDP ports all messages are sent
 # and received from
 
-sendPort = None
-rcvPort = None
+sendPort = 0
+rcvPort = 0
 
 ##8 version; /* version number */                               0x1
 ##8 flags; /* for connection set up, tear-down, control */      see below
@@ -84,7 +85,8 @@ class socket:
 
         self.addr = address
         self.seq = random.randint(0, 1000)
-        self.socket.connect(address)
+        pdb.set_trace()
+        self.socket.connect((address[0], int(address[1])))
         self.socket.settimeout(0.2)
         self.sock352PktHdrData = '!BBBBHHLLQQLL'
         udpPkt_hdr_data = struct.Struct(self.sock352PktHdrData)
@@ -123,7 +125,7 @@ class socket:
         return
 
     def accept(self):
-        self.socket.bind('', self.rPort)
+        self.socket.bind(('', int(rcvPort)))
         self.socket.listen(5)
         self.clsocket = self.socket.accept()
         # call  __sock352_get_packet() until we get a new conection
@@ -269,12 +271,12 @@ class socket:
 
             self.seq+=1
 
-        else if (headerData[1] == 2):       #fin
+        elif (headerData[1] == 2):       #fin
             udpPkt_hdr_data = struct.Struct(self.sock352PktHdrData)
             fin = udpPkt_header_data.pack(1, 6, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
             self.socket.sendAll(fin)
 
-        else if (headerData[1] == 0):
+        elif (headerData[1] == 0):
             udpPkt_hdr_data = struct.Struct(sock352PktHdrData)
             ack = udpPkt_header_data.pack(1, 4, 0, 0, 40, 0, 0, self.seq, self.ack, 0, 0)
             self.socket.sendAll(ack)
