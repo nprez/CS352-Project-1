@@ -13,8 +13,8 @@ import random
 # define the UDP ports all messages are sent
 # and received from
 
-sendPort = 0
-rcvPort = 0
+global sendPort
+global rcvPort
 
 ##8 version; /* version number */                               0x1
 ##8 flags; /* for connection set up, tear-down, control */      see below
@@ -41,8 +41,6 @@ rcvPort = 0
 def init(UDPportTx,UDPportRx): # initialize your UDP socket here
     # create a UDP/datagram socket 
     # bind the port to the Rx (receive) port number
-    global sendPort
-    global rcvPort
 
     if(UDPportTx is None or UDPportTx == 0):
         sendPort = 27182
@@ -84,9 +82,9 @@ class socket:
         #        if there was a timeout, retransmit the SYN packet
         #   set the send and recv packets sequence numbers
 
-        self.addr = (syssock.gethostbyname(syssock.getfqdn(address[0])), (int)(self.rPort))
+        self.addr = (syssock.gethostbyname(syssock.getfqdn(address[0])), (int)(address[1]))
         self.seq = random.randint(0, 1000)
-        self.socket.bind(("", sendPort))
+        self.socket.bind(("", rcvPort))
         
         #self.socket.connect((syssock.gethostbyname(syssock.getfqdn(address[0])), int(address[1])))
         #self.socket.settimeout(0.2)
@@ -145,7 +143,7 @@ class socket:
         # check the the incoming packet - did we see a new SYN packet?
         self.socket.settimeout(None)
         packetList[0], ad = self.socket.recvfrom(40)
-        self.addr = (syssock.gethostbyname(syssock.getfqdn(ad[1])), (int)(self.sPort))
+        self.addr = (syssock.gethostbyname(syssock.getfqdn(ad[0])), (int)(ad[1]))
         print ("got the packet")
         __sock352_get_packet()
         packetList[0] = None
