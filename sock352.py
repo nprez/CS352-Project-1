@@ -97,7 +97,7 @@ class socket:
         header = udpPkt_hdr_data.pack(1, 1, 0, 0, 40, 0, 0, 0, self.seq, self.ack, 0, 0)
         #first part
         print (self.addr)
-        self.socket.sendto(header, self.addr)
+        self.socket.sendto(header, address)
 
         waiting = True
         while(waiting):
@@ -144,13 +144,15 @@ class socket:
         temp = self.socket.recvfrom(40)
         self.packetList.append(temp[0])
         ad = temp[1]
-        self.addr = (syssock.gethostbyname(syssock.getfqdn(ad[0])), (int)(ad[1]))
 
+        self.addr = (syssock.gethostbyname(syssock.getfqdn(ad[0])), (int)(ad[1]))
+        __sock352_get_packet()
         #new client socket
         self.clsocket = socket()
         #set the data correctly
         self.clsocket.addr = self.addr
         
+
         print ("got the packet")
         self.__sock352_get_packet()
         self.packetList[0] = None
