@@ -160,34 +160,37 @@ class socket:
     
     def close(self):   # fill in your code here
         # send a FIN packet (flags with FIN bit set)
-        self.socket.settimeout(0.2)
-        udpPkt_hdr_data = struct.Struct(self.sock352PktHdrData)
-        header = udpPkt_hdr_data.pack(1, 2, 0, 0, 40, 0, 0, 0, self.seq, self.ack, 0, 0)
-        self.socket.sendto(header, self.addr)
+        # self.socket.settimeout(0.2)
+        # udpPkt_hdr_data = struct.Struct(self.sock352PktHdrData)
+        # header = udpPkt_hdr_data.pack(1, 2, 0, 0, 40, 0, 0, 0, self.seq, self.ack, 0, 0)
+        # self.socket.sendto(header, self.addr)
 
-        waiting = True
-        while(waiting):
-            try:
-                #second part
-                print("trying to get close ACK")
-                ret, ad = self.socket.recvfrom(40)
-                retStruct = struct.unpack(self.sock352PktHdrData, ret)
-                ackCheck = retStruct[1]
-                incSeqNum = retStruct[8]
-                incAckNum = retStruct[9]
-                #invalid
-                if(ackCheck != 6 or incAckNum != self.seq+1 or incSeqNum != self.ack):
-                    continue
-                self.ack = incSeqNum+1
-            except:
-                #first part failed
-                print("sending close failed; resending")
-                self.socket.settimeout(0.2)
-                self.socket.sendto(header, self.addr)
-                continue
-            waiting = False
+        # waiting = True
+        # while(waiting):
+        #     try:
+        #         #second part
+        #         print("trying to get close ACK")
+        #         ret, ad = self.socket.recvfrom(40)
+        #         retStruct = struct.unpack(self.sock352PktHdrData, ret)
+        #         ackCheck = retStruct[1]
+        #         incSeqNum = retStruct[8]
+        #         incAckNum = retStruct[9]
+        #         print(retStruct)
+        #         print(self.seq)
+        #         print(self.ack)
+        #         #invalid
+        #         if(ackCheck != 6 or incAckNum != self.seq+1 or incSeqNum != self.ack):
+        #             continue
+        #         self.ack = incSeqNum+1
+        #     except syssock.timeout:
+        #         #first part failed
+        #         print("sending close failed; resending")
+        #         self.socket.settimeout(0.2)
+        #         self.socket.sendto(header, self.addr)
+        #         continue
+        #     waiting = False
 
-        self.seq+=1;
+        # self.seq+=1;
 
         self.socket.close()
         return
@@ -311,6 +314,7 @@ class socket:
 
         elif (headerData[1] == 2):       #fin
             udpPkt_hdr_data = struct.Struct(self.sock352PktHdrData)
+            self.ack+=1
             fin = udpPkt_hdr_data.pack(1, 6, 0, 0, 40, 0, 0, 0, self.seq, self.ack, 0, 0)
             self.socket.sendto(fin, self.addr)
 
