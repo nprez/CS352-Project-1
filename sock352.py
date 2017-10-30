@@ -95,7 +95,7 @@ class socket:
         header = udpPkt_hdr_data.pack(1, 1, 0, 0, 40, 0, 0, 0, self.seq, self.ack, 0, 0)
         #first part
         print (self.addr)
-        self.socket.sendto(header, self.addr)
+        self.socket.sendto(header, address)
 
         waiting = True
         while(waiting):
@@ -141,15 +141,16 @@ class socket:
         # check the the incoming packet - did we see a new SYN packet?
         self.socket.settimeout(None)
         packetList[0], ad = self.socket.recvfrom(40)
+        print ("got the packet")
         self.addr = (syssock.gethostbyname(syssock.getfqdn(ad[0])), (int)(ad[1]))
-
+        __sock352_get_packet()
         #new client socket
         self.clsocket = socket()
         #set the data correctly
         self.clsocket.addr = self.addr
         
-        print ("got the packet")
-        __sock352_get_packet()
+        
+        
         packetList[0] = None
         self.socket.settimeout(0.2)
         return self.clsocket
